@@ -17,3 +17,5 @@ Process for initiating frontend and backend on local machine:
 
 If you create room, and don't see it in the room list, please refresh.
 In task manager,if you don't see the tasks initially, then please refresh.
+
+Lastly, we changed the backend_url and frontend_url as we were not able to deploy the app.
