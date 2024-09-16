@@ -43,7 +43,7 @@ function Sidebar() {
     });
 
     function getRooms() {
-        fetch("https://chat-app-sepia-kappa.vercel.app/rooms")
+        fetch("https://localhost:5001/rooms")
             .then((res) => res.json())
             .then((data) => setRooms(data));
     }
