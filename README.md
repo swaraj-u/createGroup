@@ -11,3 +11,9 @@ we have options to add , delete and to assign important status to tasks.
 Tech Stack: React, Socket.io, MongoDB, Express.js, Node.js 
 Additional Packages: Redux Toolkit, Quill Text Editor, ChakraUI package, Bootstrap, ant Design
 
+Process for initiating frontend and backend on local machine:
+1) After cloning the repository, in the frontend folder, do "npm install", then "npm run start".
+2) Then do the same for backend folder.
+
+If you create room, and don't see it in the room list, please refresh.
+In task manager,if you don't see the tasks initially, then please refresh.
