@@ -25,9 +25,7 @@ function MessageForm() {
         return month + "/" + day + "/" + year;
     }
 
-    function handleSubmit(e) {
-        e.preventDefault();
-    }
+    
 
     function scrollToBottom() {
         messageEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -36,6 +34,7 @@ function MessageForm() {
     const todayDate = getFormattedDate();
 
     socket.off("room-messages").on("room-messages", (roomMessages) => {
+        console.log("Received room-messages", roomMessages);
         setMessages(roomMessages);
     });
 
@@ -45,7 +44,7 @@ function MessageForm() {
         const today = new Date();
         const minutes = today.getMinutes() < 10 ? "0" + today.getMinutes() : today.getMinutes();
         const time = today.getHours() + ":" + minutes;
-        const roomId = currentRoom;
+        const roomId = currentRoom || socket.id;
         socket.emit("message-room", roomId, message, user, time, todayDate);
         setMessage("");
     }

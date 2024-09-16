@@ -5,7 +5,7 @@ import { useSelector } from "react-redux";
 import { LinkContainer } from "react-router-bootstrap";
 import logo from "../assets/logo.png";
 function Navigation(props) {
-    const {currentRoom}=props.currentRoom;
+    const {currentRoom}=props;
     
     const user = useSelector((state) => state.user);
     const [logoutUser] = useLogoutUserMutation();
@@ -38,7 +38,7 @@ function Navigation(props) {
                         {user&&(<LinkContainer to={`/documents/${currentRoom}`} >
                             <Nav.Link>Docs</Nav.Link>
                         </LinkContainer>)}
-                        {user&&(<LinkContainer to="/todo">
+                        {user&&(<LinkContainer to={`/todo/${currentRoom}`}>
                             <Nav.Link>Task Manager</Nav.Link>
                         </LinkContainer>)}
                         {user && (

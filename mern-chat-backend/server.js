@@ -4,8 +4,9 @@ const userRoutes = require('./routes/userRoutes')
 const User = require('./models/User');
 const Task = require("./models/Task");
 const Message = require('./models/Message')
-const rooms = ['general', 'tech', 'finance', 'crypto'];
+//const rooms = ['general', 'tech', 'finance', 'crypto'];
 const cors = require('cors');
+const activeRooms = new Set();
 
 app.use(express.urlencoded({extended: true}));
 app.use(express.json());
@@ -53,22 +54,41 @@ io.on('connection', (socket)=> {
     io.emit('new-user', members)
   })
 
-  socket.on('join-room', async(newRoom, previousRoom)=> {
-    socket.join(newRoom);
-    socket.leave(previousRoom);
-    let roomMessages = await getLastMessagesFromRoom(newRoom);
-    roomMessages = sortRoomMessagesByDate(roomMessages);
-    socket.emit('room-messages', roomMessages)
-  })
+  // socket.on('join-room', async(newRoom, previousRoom)=> {
+  //   socket.join(newRoom);
+  //   socket.leave(previousRoom);
+  //   let roomMessages = await getLastMessagesFromRoom(newRoom);
+  //   roomMessages = sortRoomMessagesByDate(roomMessages);
+  //   socket.emit('room-messages', roomMessages)
+  // })
+
+  socket.on('join-room', async (room) => {
+    const roomToJoin = room || socket.id;  // Use the provided room name or socket.id by default
+    socket.join(roomToJoin);
+    activeRooms.add(room);
+    try {
+      let roomMessages = await getLastMessagesFromRoom(roomToJoin);
+      roomMessages = sortRoomMessagesByDate(roomMessages);
+      socket.emit('room-messages', roomMessages);
+    } catch (error) {
+      console.error("Error fetching messages:", error);
+    }
+  });
 
   socket.on('message-room', async(room, content, sender, time, date) => {
-    const newMessage = await Message.create({content, from: sender, time, date, to: room});
-    let roomMessages = await getLastMessagesFromRoom(room);
-    roomMessages = sortRoomMessagesByDate(roomMessages);
-    // sending message to room
-    io.to(room).emit('room-messages', roomMessages);
-    socket.broadcast.emit('notifications', room)
+    try {
+      const newMessage = await Message.create({ content, from: sender, time, date, to: room });
+      let roomMessages = await getLastMessagesFromRoom(room);
+      roomMessages = sortRoomMessagesByDate(roomMessages);
+      // Sending message to room
+      io.to(room).emit('room-messages', roomMessages);
+      socket.broadcast.emit('notifications', room);
+    } catch (error) {
+      console.error("Error sending message:", error);
+    }
   })
+
+ 
 
   app.delete('/logout', async(req, res)=> {
     try {
@@ -81,13 +101,15 @@ io.on('connection', (socket)=> {
       socket.broadcast.emit('new-user', members);
       res.status(200).send();
     } catch (e) {
-      console.log(e);
+      // console.log(e);
       res.status(400).send()
     }
   })
+
   Task.find().then((tasks) => {
     socket.emit("allTasks", tasks);
   })
+
   socket.on("addTask", async (data) => {
     const newTask = new Task({ task: data.task });
     await newTask.save(); // Save task to database
@@ -97,7 +119,23 @@ io.on('connection', (socket)=> {
     Task.find().then((tasks) => {
       io.emit("allTasks", tasks); // Emit all tasks to all clients
     });
+
   });
+  Task.find().then((tasks) => {
+    io.emit("allTasks", tasks); // Emit all tasks to all clients
+  });
+
+socket.on("updateImportantStatus", async ({ taskId, isImportant }) => {
+  await Task.findByIdAndUpdate(taskId, { isImportant });
+
+  // // Broadcast the updated task list
+  // const tasks = await Task.find().sort({ createdAt: -1 });
+  // io.emit("allTasks", tasks);  
+  Task.find().then((tasks) => {
+    io.emit("allTasks", tasks); // Emit all tasks to all clients
+  });
+});
+
   socket.on('deleteTask', (taskId) => {
     Task.findByIdAndDelete(taskId).then(() => {
       Task.find().then((tasks) => {
@@ -109,9 +147,9 @@ io.on('connection', (socket)=> {
 })
 
  
-app.get('/rooms', (req, res)=> {
-  res.json(rooms)
-})
+app.get('/rooms', (req, res) => {
+  res.json(Array.from(activeRooms)); // Convert Set to Array and return the list of rooms
+});
 
 
 server.listen(PORT, ()=> {
@@ -124,7 +162,7 @@ const defaultValue = ""
 
 io.on("connection", socket => {
   socket.on("get-document", async documentId => {
-    console.log(documentId);
+    // console.log(documentId);
     const document = await findOrCreateDocument(documentId)
     socket.join(documentId)
     socket.emit("load-document", document.data)
@@ -146,24 +184,4 @@ async function findOrCreateDocument(id) {
   if (document) return document
   return await Document.create({ _id: id, data: defaultValue })
 }
-
-
-// Listen for "addTask" event
-// socket.on("addTask", async (data) => {
-//   const newTask = new Task({ task: data.task });
-//   await newTask.save(); // Save task to database
-
-//   // Broadcast the new task to all clients
-
-//   Task.find().then((tasks) => {
-//     io.emit("allTasks", tasks); // Emit all tasks to all clients
-// });
-// });
-//   socket.on('deleteTask', (taskId) => {
-//     Task.findByIdAndDelete(taskId).then(() => {
-//       Task.find().then((tasks) => {
-//         io.emit('allTasks', tasks);
-//       });
-//     });
-//   });
 

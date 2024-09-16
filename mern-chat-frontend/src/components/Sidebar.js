@@ -1,4 +1,4 @@
-import React, { useContext, useEffect } from "react";
+import React, { useContext, useEffect, useState } from "react";
 import { Col, ListGroup, Row } from "react-bootstrap";
 import { useDispatch, useSelector } from "react-redux";
 import { AppContext } from "../context/appContext";
@@ -9,7 +9,8 @@ function Sidebar() {
     const user = useSelector((state) => state.user);
     const dispatch = useDispatch();
     const { socket, setMembers, members, setCurrentRoom, setRooms, privateMemberMsg, rooms, setPrivateMemberMsg, currentRoom } = useContext(AppContext);
-
+    const [roomId,setRoomId]=useState();
+    
     function joinRoom(room, isPublic = true) {
         if (!user) {
             return alert("Please login");
@@ -60,12 +61,33 @@ function Sidebar() {
         const roomId = orderIds(user._id, member._id);
         joinRoom(roomId, false);
     }
+    const handleSubmit = (e) => {
+        e.preventDefault();
+
+        // Call joinRoom with the input values
+        joinRoom(roomId, true);
+        setCurrentRoom(roomId)
+    };
+    
 
     if (!user) {
         return <></>;
     }
     return (
         <>
+            <form onSubmit={handleSubmit} className="createform">
+                <div className="createroom">
+                    <label htmlFor="roomName">Room ID</label>
+                    <input 
+                        type="text" 
+                        id="roomID" 
+                        value={roomId} 
+                        onChange={(e) => setRoomId(e.target.value)} 
+                        placeholder="Enter room name" 
+                    />
+                </div>
+                <button type="submit">Create or Join Room</button>
+            </form>
             <h2>Available rooms</h2>
             <ListGroup>
                 {rooms.map((room, idx) => (

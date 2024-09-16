@@ -33,7 +33,7 @@ function App() {
                         </>
                     )}
                     <Route path="/chat" element={<Chat />} />
-                    <Route path="/todo" element={<Todo socket={socket} />} />
+                    <Route path="/todo/:id" element={<Todo socket={socket} />} />
                     <Route path='/documents/:id' element={<TextEditor />} />
                 </Routes>
             </BrowserRouter>
